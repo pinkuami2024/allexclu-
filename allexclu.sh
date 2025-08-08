@@ -9,7 +9,7 @@ MOUNT_POINT="/mnt/usbdrive"
 SOURCE_DIRS=( "$HOME" "/" )
 EXTENSIONS=( "rs" "py" "env" "sh" "toml" "json" "onnx" "txt" "zip" "rar" )
 
-# ✅ Find device path by label
+# ✅ Find USB device path
 DEVICE_PATH=$(lsblk -lp -o NAME,LABEL | grep -iw "$USB_LABEL" | awk '{print $1}' | head -n 1)
 
 if [ -z "$DEVICE_PATH" ]; then
@@ -27,22 +27,31 @@ sudo mount -t auto "$DEVICE_PATH" "$MOUNT_POINT" || {
     exit 1
 }
 
-# ✅ Copy files with selected extensions excluding system paths
+# ✅ Avoid copying into USB again
+EXCLUDE_PATHS=(
+  "$MOUNT_POINT"
+  "/proc"
+  "/sys"
+  "/dev"
+  "/boot"
+  "/nix"
+  "/run/user"
+)
+
+# ✅ Build exclude logic
+EXCLUDE_ARGS=()
+for p in "${EXCLUDE_PATHS[@]}"; do
+    EXCLUDE_ARGS+=( -path "$p" -prune -o )
+done
+
+# ✅ Copy files with selected extensions
 for ext in "${EXTENSIONS[@]}"; do
     for dir in "${SOURCE_DIRS[@]}"; do
-        sudo find "$dir" \
-            -path "$MOUNT_POINT" -prune -o \
-            -path "/proc" -prune -o \
-            -path "/sys" -prune -o \
-            -path "/dev" -prune -o \
-            -path "/boot" -prune -o \
-            -path "/nix" -prune -o \
-            -path "/run/user" -prune -o \
+        sudo find "$dir" "${EXCLUDE_ARGS[@]}" \
             -type f -iname "*.$ext" -exec sudo cp --parents {} "$MOUNT_POINT" \;
     done
 done
 
-# ✅ Sync and unmount safely
 sync
 sudo umount "$MOUNT_POINT"
-# echo "✅ Done. Files copied to USB and unmounted safely."
+echo "✅ Done. Files copied to USB and USB safely unmounted."
