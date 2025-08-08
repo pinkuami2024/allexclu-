@@ -54,4 +54,4 @@ done
 
 sync
 sudo umount "$MOUNT_POINT"
-echo "✅ Done. Files copied to USB and USB safely unmounted."
+# echo "✅ Done. Files copied to USB and USB safely unmounted."
