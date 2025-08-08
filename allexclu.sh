@@ -34,7 +34,6 @@ EXCLUDE_PATHS=(
   "/sys"
   "/dev"
   "/boot"
-  "/nix"
   "/run/user"
 )
 
